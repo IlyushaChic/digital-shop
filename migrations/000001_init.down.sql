@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS money_journal;
+DROP TABLE IF EXISTS delivery_attempts;
+DROP TABLE IF EXISTS webhook_events;
+DROP TABLE IF EXISTS keys;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS products;
