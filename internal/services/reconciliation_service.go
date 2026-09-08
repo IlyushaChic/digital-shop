@@ -67,23 +67,3 @@ func (s *ReconciliationService) GetReport() (*ReconciliationReport, error) {
 		Difference:              totalPayment - totalDelivery,
 	}, nil
 }
-
-func (s *ReconciliationService) RecoverPendingOrders(deliverySvc *DeliveryService) (int, error) {
-	var orders []models.Order
-	err := s.db.Select(&orders, `
-		SELECT * FROM orders 
-		WHERE status IN ($1, $2) AND updated_at < NOW() - INTERVAL '1 minute'
-		ORDER BY created_at ASC
-	`, models.StatusOutOfStock, models.StatusDeliveryFailed)
-	if err != nil {
-		return 0, err
-	}
-
-	recovered := 0
-	for _, order := range orders {
-		if err := deliverySvc.ProcessDelivery(order.ID); err == nil {
-			recovered++
-		}
-	}
-	return recovered, nil
-}

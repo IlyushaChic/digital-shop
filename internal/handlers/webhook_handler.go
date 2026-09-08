@@ -13,10 +13,10 @@ import (
 type WebhookHandler struct {
 	db          *sqlx.DB
 	deliverySvc *services.DeliveryService
-	queue       chan string
+	queue       chan int // теперь канал для itemID
 }
 
-func NewWebhookHandler(db *sqlx.DB, deliverySvc *services.DeliveryService, queue chan string) *WebhookHandler {
+func NewWebhookHandler(db *sqlx.DB, deliverySvc *services.DeliveryService, queue chan int) *WebhookHandler {
 	return &WebhookHandler{
 		db:          db,
 		deliverySvc: deliverySvc,
@@ -116,7 +116,15 @@ func (h *WebhookHandler) HandlePayment(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.queue <- req.OrderID
+		// Получаем все pending позиции и ставим их в очередь
+		var items []models.OrderItem
+		err = h.db.Select(&items, "SELECT id FROM order_items WHERE order_id = $1 AND status = 'pending'", req.OrderID)
+		if err == nil {
+			for _, it := range items {
+				h.queue <- it.ID
+			}
+		}
+
 		w.WriteHeader(http.StatusOK)
 		return
 	}

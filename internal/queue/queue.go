@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-func StartWorkerPool(ctx context.Context, wg *sync.WaitGroup, queue <-chan string, deliverySvc *services.DeliveryService, workers int) {
+func StartWorkerPool(ctx context.Context, wg *sync.WaitGroup, queue <-chan int, deliverySvc *services.DeliveryService, workers int) {
 	wg.Add(workers)
 	for i := 0; i < workers; i++ {
 		go func() {
@@ -16,9 +16,9 @@ func StartWorkerPool(ctx context.Context, wg *sync.WaitGroup, queue <-chan strin
 				select {
 				case <-ctx.Done():
 					return
-				case orderID := <-queue:
-					if err := deliverySvc.ProcessDelivery(orderID); err != nil {
-						logger.Log.Errorf("Delivery failed for order %s: %v", orderID, err)
+				case itemID := <-queue:
+					if err := deliverySvc.ProcessItem(itemID); err != nil {
+						logger.Log.Errorf("Failed to process item %d: %v", itemID, err)
 					}
 				}
 			}
